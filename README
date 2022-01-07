@@ -1,0 +1,12 @@
+This pack allows for loading predicates from 
+a Semantic Mediawiki site in SWI-Prolog
+
+To use the pack
+
+1. Download the zip archive, then from SWI-Prolog
+2. pack_install('smw-0.1.0.tgz').
+3. attach_packs.
+4. use_module(library(smw)).
+
+The predicates will be available as 
+smw:pred(Subj, Pred, Obj).

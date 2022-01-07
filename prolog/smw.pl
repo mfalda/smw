@@ -1,4 +1,4 @@
-:- module(smw, [example/0, login/4, ask_query/4, ask_query/5, ask_query/6]).
+:- module(smw, [example/0, login/4, get_predicates/5, get_predicates/6, get_predicates/7, ask_query/5, ask_query/6, ask_query/7]).
 
 :- use_module(library(http/http_open)).
 :- use_module(library(http/http_client)).
@@ -54,11 +54,11 @@ assert_atom(A) :-
 % e.g.: ask_query('http://localhost/wiki', 'Samplings',
 %           ['Has Patient=Parent', 'Number=number'],
 %           [0, 50], ['Username', 'Pwd',], L).
-ask_query(URL, Category, Printouts, L) :-
-    ask_query(URL, Category, Printouts, [0, 100], [], L).
-ask_query(URL, Category, Printouts, [Offset, Limit], L) :-
-    ask_query(URL, Category, Printouts, [Offset, Limit], [], L).
-ask_query(URL, Category, Printouts, [Offset, Limit], UserPwd, L) :-
+get_predicates(Pred, URL, Category, Printouts, L) :-
+    ask_query(Pred, URL, Category, Printouts, [0, 100], [], L).
+get_predicates(Pred, URL, Category, Printouts, [Offset, Limit], L) :-
+    ask_query(Pred, URL, Category, Printouts, [Offset, Limit], [], L).
+get_predicates(Pred, URL, Category, Printouts, [Offset, Limit], UserPwd, L) :-
     atomic_list_concat([URL, 'api.php'], '/', URL1),
     (UserPwd \= [] ->
         [Username, Pwd] = UserPwd,
@@ -72,6 +72,7 @@ ask_query(URL, Category, Printouts, [Offset, Limit], UserPwd, L) :-
                        q=Category1,
                        po=Printouts1,
                        'p[format]'='prolog',
+                       'p[pname]'=Pred,
                        'p[limit]'=Limit,
                        'p[offset]'=Offset
                     ]) , Response, []),
@@ -85,10 +86,52 @@ ask_query(URL, Category, Printouts, [Offset, Limit], UserPwd, L) :-
       format('~w predicates loaded.~n', [N])
     ).
 
+assert_list(Pred, StringList) :-
+    atomic_list_concat(L, ',', StringList),
+    P =.. [Pred|L],
+    assertz(P).
+
+ask_query(Pred, URL, Category, Printouts, L) :-
+    ask_query(Pred, URL, Category, Printouts, [0, 100], [], L).
+ask_query(Pred, URL, Category, Printouts, [Offset, Limit], L) :-
+    ask_query(Pred, URL, Category, Printouts, [Offset, Limit], [], L).
+ask_query(Pred, URL, Category, Printouts, [Offset, Limit], UserPwd, L) :-
+    atomic_list_concat([URL, 'api.php'], '/', URL1),
+    (UserPwd \= [] ->
+        [Username, Pwd] = UserPwd,
+        login(URL1, Username, Pwd, _Token)
+    ; true),
+    atomic_list_concat([URL, 'index.php?title=Special:Ask'], '/', URL2),
+    atomic_list_concat(['[[Category:', Category, ']]'], '', Category1),
+    atomic_list_concat(Printouts, '\r\n', Printouts1),
+    http_post(URL2, form([
+                       %_action	"submit"
+                       q=Category1,
+                       po=Printouts1,
+                       'p[format]'='csv',
+                       'p[limit]'=Limit,
+                       'p[offset]'=Offset
+                    ]) , Response, []),
+    (sub_atom(Response, _From, 2, _After, '<!') ->
+      write('Error while retrieving predicates: check that you are logged and that the query are correct.'), nl,
+      fail
+    ;
+      atomic_list_concat(L, '\n', Response),
+      maplist(assert_list(Pred), L),
+      length(L, N),
+      format('~w predicates loaded.~n', [N])
+    ).
+
 % e.g.: return get_preds:predicate(S, V, O).
 example :-
+    write('SMW pack loaded. Short guide:'), nl, nl,
     write('Login in Semantic MediaWiki using login, for example: '), nl,
-    write('login(''http://localhost/wiki/api.php'', ''Username'', ''Pwd'', _Token).'), nl, nl,
-    write('Once logged in the session persists a while.'), nl,
+    write('?- login(''http://localhost/wiki/api.php'', ''Username'', ''Pwd'', _Token).'), nl, nl,
+    write('once logged in the session persists a while.'), nl, nl,
     write('To submit a query use ask_query, for example:'), nl,
-    write('ask_query(''http://localhost/wiki'', ''Category'', [''Prop1'', ''Prop2''], _L).'), nl.
+    write('?- ask_query(pred, ''http://localhost/wiki'', ''Category'', [''Prop1'', ''Prop2''], _L).'), nl, nl,
+    write('the result will be a set of asserted predicates of the form pred/N where N is the number of printouts +1 (the subject).'), nl, nl,
+    write('If you have the Prolog export format installed use get_predicates (same syntax),'), nl,
+    write('the result will be a set of asserted predicates pred(Subject, Predicate, Object).'), nl.
+
+:- initialization(example).
