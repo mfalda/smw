@@ -2,11 +2,11 @@ This pack allows to load predicates from a Semantic Mediawiki site in SWI-Prolog
 
 ## To use the pack
 
-0. Have the [Prolog SRF](https://github.com/SemanticMediaWiki/SemanticResultFormats/pull/697) installed;
-1. download the archive, then from SWI-Prolog;
-2. ?- pack_install('smw-0.1.0.tgz').
-3. ?- attach_packs.
-4. ?- use_module(library(smw)).
+0. Have the Prolog SRF(https://github.com/SemanticMediaWiki/SemanticResultFormats/pull/697) installed;
+1. download the archive, then from SWI-Prolog:
+a. ?- pack_install('smw-0.1.0.tgz'). % recreate from ZIP if necessary
+b. ?- attach_packs.
+c. ?- use_module(library(smw)).
 
 The predicates will be available as
 ``
