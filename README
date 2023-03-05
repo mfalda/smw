@@ -3,7 +3,7 @@ This pack allows for loading predicates from a Semantic Mediawiki site in SWI-Pr
 ## To use the pack
 
 1. Download the zip archive, then from SWI-Prolog;
-2. ?- pack_install('smw-0.1.0.tgz').
+2. ?- pack_install('smw-0.3.0.zip').
 3. ?- attach_packs.
 4. ?- use_module(library(smw)).
 

@@ -21,16 +21,17 @@ get_token(URL, Token) :-
     M = (query=json([tokens=json([logintoken=Token])])).
     %www_form_encode(Token, TokenEncoded).
 
-% e.g.: login('http://localhost/wiki/api.php', 'Username', 'Pwd', Token).
+% e.g.: login('http://localhost/wiki', 'Username', 'Pwd', Token).
 login(URL, User, Pwd, Token) :-
-    get_token(URL, Token),
+    format(atom(URL1), '~w/api.php', [URL]),
+    get_token(URL1, Token),
     %Token='29590a3037d325be70b93fb8258ed29257448cfb%2B%5C',
-    http_post(URL, form([
+    http_post(URL1, form([
                         action='clientlogin',
                         username=User,
                         format='json',
                         rememberMe=1,
-                        loginreturnurl=URL,
+                        loginreturnurl=URL1,
                         logintoken = Token,
                         password = Pwd
                     ]) , Request, []),
@@ -68,7 +69,8 @@ get_smw_export(URL, Category, Filters, Printouts, [Offset, Limit], UserPwd, Pred
                         'p[format]'=Format,
                         'p[pname]'=Pred,
                         'p[limit]'=Limit,
-                        'p[offset]'=Offset
+                        'p[offset]'=Offset,
+                        'p[mainlabel]'='ID'
                     ]) , Response, []),
     (sub_atom(Response, _From, 2, _After, '<!') ->
       write('Error while retrieving predicates: check that you are logged and that the query are correct.'), nl,
@@ -115,7 +117,7 @@ ask_query(Pred, URL, Category, Filters, Printouts, [Offset, Limit], UserPwd, L) 
 example :-
     write('SMW pack loaded. Short guide:'), nl, nl,
     write('Login in Semantic MediaWiki using login, for example: '), nl,
-    write('?- login(''http://localhost/wiki/api.php'', ''Username'', ''Pwd'', _Token).'), nl, nl,
+    write('?- login(''http://localhost/wiki'', ''Username'', ''Pwd'', _Token).'), nl, nl,
     write('once logged in the session persists a while.'), nl, nl,
     write('To submit a query use ask_query, for example:'), nl,
     write('?- ask_query(pred, ''http://localhost/wiki'', ''Category'', [''Prop1::>50''], [''Prop1'', ''Prop2''], _L).'), nl, nl,
